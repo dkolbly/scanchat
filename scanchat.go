@@ -31,7 +31,7 @@ func (s *ChatParser) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("could not read body\n"))
 		return
 	}
-	a := Analyze(chat)
+	a := Analyze(chat, http.Get)
 	buf, err := json.MarshalIndent(a, "", "  ")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

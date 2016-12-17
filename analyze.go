@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"net/http"
 	"regexp"
 )
 
@@ -9,6 +10,12 @@ type Link struct {
 	URL   string `json:"url"`
 	Title string `json:"title,omitempty"`
 	Error string `json:"error,omitempty"`
+}
+
+type Getter func(url string) (*http.Response, error)
+
+type Analyzer struct {
+	cur *Analysis
 }
 
 type Analysis struct {
@@ -20,7 +27,7 @@ type Analysis struct {
 // Analyze processes the chat message from the reader, locating and
 // noting references to entities.  Most malformed entity references
 // are silently ignored.
-func Analyze(chat []byte) *Analysis {
+func Analyze(chat []byte, getter Getter) *Analysis {
 	ret := &Analysis{}
 
 	for len(chat) > 0 {
@@ -39,7 +46,7 @@ func Analyze(chat []byte) *Analysis {
 		case '(':
 			remain = ret.parseEmoticon(chat)
 		case 'h', 'H':
-			remain = ret.parseLink(chat)
+			remain = ret.parseLink(chat, getter)
 		}
 		// if we parsed out a token,
 		if remain == nil {
