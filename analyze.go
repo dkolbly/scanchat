@@ -1,10 +1,8 @@
 package main
 
 import (
-	"regexp"
-	"bufio"
 	"bytes"
-	"log"
+	"regexp"
 )
 
 type Link struct {
@@ -24,56 +22,63 @@ type Analysis struct {
 // are silently ignored.
 func Analyze(chat []byte) *Analysis {
 	ret := &Analysis{}
-	s := bufio.NewScanner(bytes.NewReader(chat))
-	s.Split(splitRef)
-	for s.Scan() {
-		log.Printf("*** %q", s.Text())
+
+	for len(chat) > 0 {
+		k := bytes.IndexAny(chat, "(hH@")
+		if k < 0 {
+			break
+		}
+		if k > 0 {
+			chat = chat[k:]
+		}
+
+		var remain []byte
+		switch chat[0] {
+		case '@':
+			remain = ret.parseMention(chat)
+		case '(':
+			remain = ret.parseEmoticon(chat)
+		case 'h', 'H':
+			remain = ret.parseLink(chat)
+		}
+		// if we parsed out a token,
+		if remain == nil {
+			chat = chat[1:]
+		} else {
+			chat = remain
+		}
 	}
-	log.Printf("done scanning")
 
 	return ret
 }
 
-const scanWindow = 1024 // max URL length
-
-var emoticonRe = regexp.MustCompile(`^\(([a-zA-Z]{1,15})\)`)
 var mentionRe = regexp.MustCompile(`^@([a-zA-Z]+)`)
+var emoticonRe = regexp.MustCompile(`^\(([a-zA-Z]{1,15})\)`)
 
-// The @gruber v2 URL regex from https://mathiasbynens.be/demo/url-regex
-// seems to be a good compromise between complexity and completeness (leaning towards
-// fail "safe" where safe is defined as recognizing URLs).  This turns out to be
-// a dark art, and most likely each organization should have a standard one that we
-// should use here.
-var urlRe = regexp.MustCompile(`#(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s` + "`" + `!()\[\]{};:'".,<>?«»“”‘’]))#iS`)
-
-func splitRef(data []byte, atEOF bool) (int, []byte, error) {
-	// if atEOF is true, we have to find any token that is there; it's not
-	// OK to let Scanner advance through data for us.  Unfortunately.
-	alreadySkipped := 0
-
-	for len(data) > 0 {
-		log.Printf("hi (%d+) %q", alreadySkipped, data)
-		// find the start of something potentially interesting
-		k := bytes.IndexAny(data, "(h@")
-		log.Printf("k=%d", k)
-		if k < 0 {
-			// there are no possible starts... consume everything
-			// and return return no tokens
-			return alreadySkipped + len(data), nil, nil
-		}
-		log.Printf("It is '%c'", data[k])
-
-		switch data[k] {
-		case '@':
-			m := mentionRe.FindSubmatch(data[k:])
-			if m != nil {
-				log.Printf("MENTION %q", string(m[1]))
-				return alreadySkipped + k + len(m[0]), m[1], nil
-			}
-			log.Printf("not a mention, remain %q", data[k+1:])
-		}
-		alreadySkipped += k + 1
-		data = data[k+1:]
+// parseMention parses out an @mention, if any, from a chat message
+// starting at `@`, adding it to the Analysis.  Returns the remainder
+// of the chat message (i.e., after the @mention), or nil if a valid
+// mention was not found.
+func (a *Analysis) parseMention(chat []byte) []byte {
+	m := mentionRe.FindSubmatch(chat)
+	if m == nil {
+		return nil
 	}
-	return alreadySkipped, nil, nil
+
+	a.Mentions = append(a.Mentions, string(m[1]))
+	return chat[len(m[0]):]
+}
+
+// parseEmoticon parses out an (emoticon), if any, from a chat message
+// starting at the `(`, adding it to the Analysis.  Returns the remainder
+// of the chat message (i.e., after the (emoticon)), or nil if a valid
+// emoticon was not found.
+func (a *Analysis) parseEmoticon(chat []byte) []byte {
+	m := emoticonRe.FindSubmatch(chat)
+	if m == nil {
+		return nil
+	}
+
+	a.Emoticons = append(a.Emoticons, string(m[1]))
+	return chat[len(m[0]):]
 }

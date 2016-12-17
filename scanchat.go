@@ -1,10 +1,10 @@
 package main
 
 import (
-	"io/ioutil"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -41,4 +41,3 @@ func (s *ChatParser) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(append(buf, '\n'))
 }
-
