@@ -8,7 +8,7 @@ to certain kinds of entities.  Currently supported entities are:
   with a non-word character ([Reference](https://confluence.atlassian.com/hipchat/get-teammates-attention-744328217.html))
 
 * emoticons - Currently only handles _custom_ emoticons, which are
-  alphanumeric strings up to 15 characters in length encloded in
+  alphanumeric strings up to 15 characters in length enclosed in
   parentheses.  ([Reference](https://www.hipchat.com/emoticons))
 
 * links - URLs
@@ -33,7 +33,7 @@ For example,
 References to URLs will include the title of the page in the return
 value:
 
-    $ curl -d 'Check out this (cat)(cat) https://www.youtube.com/watch?v=3EIbWjkimAs' \
+    $ curl -d 'Check out this (cat) https://www.youtube.com/watch?v=3EIbWjkimAs' \
                 http://localhost:8080/scan-message
     {
       "emoticons": [
@@ -47,3 +47,15 @@ value:
       ]
     }
 
+
+Security Considerations
+-----------------------
+
+This service makes outgoing http(s) connections based on user input.
+If not used carefully, it has the potential to expose information from
+internal services.  (Note that controlling access by using a public
+DNS server is insufficient because an attacker can just configure
+their own IN A entry that resolves to a private IP.)
+
+Recommended deployment is to use a firewall rule to disallow outgoing
+connections to any private IPs.

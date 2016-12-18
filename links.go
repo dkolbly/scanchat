@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/html"
 	"io"
 	"log"
+	"net/http"
 	"regexp"
 )
 
@@ -40,6 +41,16 @@ func (a *Analysis) parseLink(chat []byte, getter Getter) []byte {
 	return chat[len(m[0]):]
 }
 
+// ErrNotSuccessful represents a response other than 200 OK while
+// attempting to retrieve a referenced page
+type ErrNotSuccessful struct {
+	Status string
+}
+
+func (ns ErrNotSuccessful) Error() string {
+	return ns.Status
+}
+
 // getTitleForURL dereferences the given URL using the supplied
 // getter.  Since this is an internet access, one hopes that the
 // getter is caching results (perhaps using a caching proxy configured
@@ -51,6 +62,8 @@ func (a *Analysis) parseLink(chat []byte, getter Getter) []byte {
 // (redis would also work pretty well; there may be other solutions,
 // but something like groupcache, while being nice for scaling out
 // and avoiding the thundering herd, doesn't support expiration)
+//
+// See also Security Considerations in the README
 func getTitleForURL(getter Getter, url string) (string, error) {
 	resp, err := getter(url)
 	if err != nil {
@@ -59,6 +72,10 @@ func getTitleForURL(getter Getter, url string) (string, error) {
 	}
 	log.Printf("Retrieval success: %s", resp.Status)
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", ErrNotSuccessful{resp.Status}
+	}
+
 	return extractTitle(resp.Body)
 }
 
