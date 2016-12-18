@@ -16,7 +16,10 @@ type simpleCase struct {
 
 var testCases = []simpleCase{
 	{
-		given: "Nothing here",
+		given: "", // definitely nothing here
+	},
+	{
+		given: "Nothing interesting here",
 	},
 	{
 		given: "@alice @4l33t_BobJones",
