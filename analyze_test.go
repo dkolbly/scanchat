@@ -85,6 +85,17 @@ var testCases = []simpleCase{
 			},
 		},
 	},
+	{
+		given: "More... (http://mock.it/good_(cat))",
+		result: Analysis{
+			Links: []Link{
+				Link{
+					URL:   "http://mock.it/good_(cat)",
+					Title: "Paren",
+				},
+			},
+		},
+	},
 }
 
 func mockURLGetter(url string) (ret *http.Response, err error) {
@@ -103,6 +114,9 @@ func mockURLGetter(url string) (ret *http.Response, err error) {
 
 	case "http://mock.it/good": // for testing the happy path
 		body = "<html><title>Good stuff</title><body>yay</body>"
+
+	case "http://mock.it/good_(cat)": // for testing a balanced paren
+		body = "<html><title>Paren</title><body>ok...</body>"
 
 	case "http://mock.it/entities": // for testing entity refs in the title
 		body = "<html><title>Does x&lt;y&#x3f;</title><body>maybe</body>"
