@@ -59,8 +59,8 @@ func Analyze(chat []byte, getter Getter) *Analysis {
 	return ret
 }
 
-var mentionRe = regexp.MustCompile(`^@([a-zA-Z]+)`)
-var emoticonRe = regexp.MustCompile(`^\(([a-zA-Z]{1,15})\)`)
+var mentionRe = regexp.MustCompile(`^@(\w+)`)
+var emoticonRe = regexp.MustCompile(`^\(([\dA-Za-z]{1,15})\)`)
 
 // parseMention parses out an @mention, if any, from a chat message
 // starting at `@`, adding it to the Analysis.  Returns the remainder

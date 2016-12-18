@@ -79,6 +79,13 @@ func getTitleForURL(getter Getter, url string) (string, error) {
 	return extractTitle(resp.Body)
 }
 
+// extractTitle reads the body, presumed to be HTML, and pulls out the
+// content of the <title> element.  The underlying library,
+// golang.org/x/net/html, seems to handle weird things pretty well and
+// in fact appears to return the title text in a single TextToken, but
+// it's not clear if that's part of the API or just happens to be true
+// for the current implementation, so we do process multiple
+// TextTokens within a <title>.
 func extractTitle(body io.Reader) (string, error) {
 	rd := html.NewTokenizer(body)
 

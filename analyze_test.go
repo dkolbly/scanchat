@@ -19,15 +19,15 @@ var testCases = []simpleCase{
 		given: "Nothing here",
 	},
 	{
-		given: "@alice @bob",
+		given: "@alice @4l33t_BobJones",
 		result: Analysis{
-			Mentions: []string{"alice", "bob"},
+			Mentions: []string{"alice", "4l33t_BobJones"},
 		},
 	},
 	{
-		given: "Fun (happy) stuff",
+		given: "Fun (happy) stuff (y) (abcde0123456789) (justalittle2long)",
 		result: Analysis{
-			Emoticons: []string{"happy"},
+			Emoticons: []string{"happy", "y", "abcde0123456789"},
 		},
 	},
 	{
