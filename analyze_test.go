@@ -54,6 +54,19 @@ var testCases = []simpleCase{
 		},
 	},
 	{
+		given: "@donovan check out (smile) http://mock.it/good",
+		result: Analysis{
+			Mentions:  []string{"donovan"},
+			Emoticons: []string{"smile"},
+			Links: []Link{
+				Link{
+					URL:   "http://mock.it/good",
+					Title: "Good stuff",
+				},
+			},
+		},
+	},
+	{
 		given: "@donovan I'm (sad) (see http://mock.it/fail)",
 		result: Analysis{
 			Mentions:  []string{"donovan"},

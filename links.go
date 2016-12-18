@@ -29,7 +29,7 @@ import (
 // http://bit.ly/1hY5QfK)
 //                      ^ see, I just did it
 //
-var urlRe = regexp.MustCompile(`(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s` + "`" + `!()\[\]{};:'".,<>?«»“”‘’]))`)
+var urlRe = regexp.MustCompile(`^(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s` + "`" + `!()\[\]{};:'".,<>?«»“”‘’]))`)
 
 // parseLink parses out an URL link, if any, from a chat message
 // starting at the `h`, adding it to the Analysis.  Returns the remainder
@@ -44,7 +44,6 @@ func (a *Analysis) parseLink(chat []byte, getter Getter) []byte {
 	link := Link{
 		URL: string(m[0]),
 	}
-
 	title, err := getTitleForURL(getter, link.URL)
 	if err != nil {
 		link.Error = err.Error()
