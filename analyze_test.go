@@ -112,6 +112,31 @@ var testCases = []simpleCase{
 			},
 		},
 	},
+	{
+		given: "ftp://rscheme.org/foo",
+	},
+	{
+		given: "http://www.rscheme.org/~donovan/",
+		result: Analysis{
+			Links: []Link{
+				Link{
+					URL:   "http://www.rscheme.org/~donovan/",
+					Title: "Donovan",
+				},
+			},
+		},
+	},
+	{
+		given: "HTTP://RSCHEME.ORG/~donovan/",
+		result: Analysis{
+			Links: []Link{
+				Link{
+					URL:   "HTTP://RSCHEME.ORG/~donovan/",
+					Title: "Donovan",
+				},
+			},
+		},
+	},
 }
 
 func mockURLGetter(url string) (ret *http.Response, err error) {
@@ -141,6 +166,9 @@ func mockURLGetter(url string) (ret *http.Response, err error) {
 		// This is bad HTML, but Chrome at least treats it as escaped,
 		// as does golang.org/x/net/html (maybe not a coincidence, eh)
 		body = "<html><title>Cat <i>blue</i></title><body>Blue</body>"
+
+	case "http://www.rscheme.org/~donovan/", "HTTP://RSCHEME.ORG/~donovan/": // case insense testing
+		body = "<html><head><title>Donovan</title></head><body>Me...</body></html>"
 	}
 	ret.Body = ioutil.NopCloser(strings.NewReader(body))
 	return

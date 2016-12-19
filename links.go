@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-// urlRe is the @gruber v2 URL regex from
+// urlRe is a modified form(*) of the @gruber v2 URL regex from
 // https://mathiasbynens.be/demo/url-regex, which seems to be a good
 // compromise between complexity and completeness (leaning towards
 // fail "safe" where safe is defined as recognizing URLs).
@@ -22,14 +22,18 @@ import (
 // because of the likelihood that someone writing something like "Hey
 // @bob did you see the thing? (you know, http://bit.ly/thing)" does
 // not intend the ')' to be part of the URL.  However, it is
-// limited(*) in capability
+// limited(**) in capability
 //
-// (* this SO answer, my all-time favorite, explains why it is limited,
-// although in the context of HTML parsing and not URL parsing.
-// http://bit.ly/1hY5QfK)
-//                      ^ see, I just did it
+// (* the modifications are to limit it to explicit http[s], and adapt
+// it to our operating environment by anchoring it and, of course,
+// expressing it as a Go string)
 //
-var urlRe = regexp.MustCompile(`^(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s` + "`" + `!()\[\]{};:'".,<>?«»“”‘’]))`)
+// (** this SO answer, my all-time favorite, explains one reason that
+// it is limited, although in the context of HTML parsing and not URL
+// parsing: http://bit.ly/1hY5QfK)
+//                               ^ see, I just did it
+//
+var urlRe = regexp.MustCompile(`^(?i)\b((?:https?:(?:/{1,3}|[a-z0-9%]))(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s` + "`" + `!()\[\]{};:'".,<>?«»“”‘’]))`)
 
 // parseLink parses out an URL link, if any, from a chat message
 // starting at the `h`, adding it to the Analysis.  Returns the remainder
@@ -61,23 +65,19 @@ type ErrNotSuccessful struct {
 	Status string
 }
 
+// Error implements the error interface.  Returns the status
+// string, which may be something like "404 Not found" or
+// "500 Internal server error"
 func (ns ErrNotSuccessful) Error() string {
 	return ns.Status
 }
 
 // getTitleForURL dereferences the given URL using the supplied
-// getter.  Since this is an internet access, one hopes that the
-// getter is caching results (perhaps using a caching proxy configured
-// using HTTP_PROXY).  We should also instrument this to figure out if
-// it'd be worth building our own cache of parsed out titles, to save
-// us the work of actually parsing the HTML at all.  memcache would
-// be a pretty good backing store for a title cache, because we can
-// set expiration times so we can respect content that changes over time
-// (redis would also work pretty well; there may be other solutions,
-// but something like groupcache, while being nice for scaling out
-// and avoiding the thundering herd, doesn't support expiration)
+// getter.  Since this is an internet access, some caching strategy
+// is probably called for (see Caching Considerations in the README)
 //
-// See also Security Considerations in the README
+// Also, note that this is taking network action based on user-supplied
+// content; see Security Considerations in the README
 func getTitleForURL(getter Getter, url string) (string, error) {
 	resp, err := getter(url)
 	if err != nil {
@@ -95,11 +95,11 @@ func getTitleForURL(getter Getter, url string) (string, error) {
 
 // extractTitle reads the body, presumed to be HTML, and pulls out the
 // content of the <title> element.  The underlying library,
-// golang.org/x/net/html, seems to handle weird things pretty well and
-// in fact appears to return the title text in a single TextToken, but
-// it's not clear if that's part of the API or just happens to be true
-// for the current implementation, so we do process multiple
-// TextTokens within a <title>.
+// golang.org/x/net/html, seems to handle odd cases (like malformed
+// HTML) pretty well and, in fact, appears to return the title text in
+// a single TextToken -- but it's not clear if that's part of the API or
+// just happens to be true for the current implementation, so we do
+// support multiple TextTokens within the <title>.
 func extractTitle(body io.Reader) (string, error) {
 	rd := html.NewTokenizer(body)
 
